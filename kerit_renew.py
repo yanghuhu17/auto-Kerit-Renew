@@ -402,8 +402,15 @@ def do_renew(sb):
             return el ? parseInt(el.innerText || "0") : 0;
         })()
     """)
+    initial_remaining = extract_remaining_days(sb)
     need = 7 - initial_count
-    print(f"📊 当前进度: {initial_count}/7，本次需续期: {need}次")
+    print(f"📊 当前进度: {initial_count}/7，剩余天数: {initial_remaining}天，本次需续期: {need}次")
+
+    if initial_remaining >= 7:
+        print("✅ 剩余天数已满7天，无需续期")
+        sb.save_screenshot("renew_skip.png")
+        send_tg("✅ 无需续期（剩余天数已满）", server_id, initial_remaining)
+        return
 
     if need <= 0:
         print("🎉 已达上限7/7，无需续期")
