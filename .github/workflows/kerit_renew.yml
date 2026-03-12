@@ -2,7 +2,7 @@ name: Kerit-Renew
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 */6 * *'
+    - cron: '12 2 */3 * *'
 jobs:
   run_kerit_login:
     runs-on: ubuntu-latest
@@ -37,6 +37,11 @@ jobs:
         run: |
           pip install seleniumbase
           seleniumbase install uc_driver
+      - name: ⏳ 添加随机延迟
+        run: |
+          delay=$((RANDOM % 120))
+          echo "随机延迟: ${delay}秒"
+          sleep $delay
       - name: 🚀 运行脚本
         env:
           PYTHONIOENCODING: utf-8
@@ -51,3 +56,19 @@ jobs:
         with:
           name: debug-screenshots
           path: "*.png"
+      - name: ⏱️ 提交执行时间
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p kerit && echo "$(date +'%Y-%m-%d %H:%M:%S')" > kerit/time.txt
+          git add kerit/time.txt 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "无变化，无需提交"
+          else
+            TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
+            git commit -m "⏱️ 更新 kerit 执行时间: $TIMESTAMP"
+            git fetch origin main
+            git push -f origin HEAD:main
+            echo "✅ 更改已推送"
+          fi
